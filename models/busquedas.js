@@ -52,8 +52,6 @@ class Busquedas {
 		console.log(lat, lon);
 		try {
 			let params = this.paramsWeather;
-
-			console.log(params);
 			params = params.map(param => ({
 				appid: param.appid,
 				lat,
