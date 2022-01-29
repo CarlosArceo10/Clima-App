@@ -1,10 +1,23 @@
+const fs = require('fs');
+
 const axios = require('axios');
 
 class Busquedas {
-	historial = ['Tegucigalpa', 'Madrid'];
+	historial = [];
+	dbPath = './db/database.json'
 
 	constructor() {
-		// TODO: Leer DB si existe
+		this.readDB();
+	}
+
+	get historialCapitalizado() {
+		return this.historial.map(lugar => {
+			let palabras = lugar.split(' ');
+
+			palabras = palabras.map(p => p[0].toUpperCase() + p.substring(1));
+
+			return palabras.join(' ');
+		}) 
 	}
 
 	get paramsMapbox() {
@@ -18,8 +31,6 @@ class Busquedas {
 	get paramsWeather() {
 		return {
 			'appid': process.env.OPENWEATHER_KEY,
-			'lat': 10,
-			'lon': 5,
 			'lang': 'es',
 			'units': 'metric'
 		}
@@ -49,37 +60,65 @@ class Busquedas {
 	}
 
 	async climaLugar(lat, lon) {
-		console.log(lat, lon);
 		try {
-			let params = this.paramsWeather;
-			params = params.map(param => ({
-				appid: param.appid,
-				lat,
-				lon,
-				lang: param.lang,
-				units: param.units
-			}))
-
-			console.log(params);
 			const instance = axios.create({
 				baseURL: 'https://api.openweathermap.org/data/2.5/weather',
-				params
+				params: { ...this.paramsWeather, lat, lon }
 			})
 
-			respuesta = await instance.get();
+			const respuesta = await instance.get();
 
-			console.log(respuesta.data);
-			// resp.data
+			const { weather, main } = respuesta.data;
+
 
 			return {
-				desc: 'Algo de nubes',
-				min: 'min',
-				max: 'max',
-				temp: 'temp'
+				desc: weather[0].description,
+				min: main.temp_min,
+				max: main.temp_max,
+				temp: main.temp
 			}
 		} catch (error) {
 			console.log(error);
 		}
+	}
+
+	addHistory(lugar) {
+		if (this.historial.includes(lugar.toLocaleLowerCase())) {
+			return;
+		}
+
+		this.historial = this.historial.splice(0,5)
+		;
+		this.historial.unshift(lugar.toLocaleLowerCase());
+
+		this.saveDB();
+	}
+
+	saveDB() {
+		const payload = {
+			historial: this.historial
+		}
+
+		fs.writeFileSync(this.dbPath, JSON.stringify(payload));
+	}
+
+	readDB() {
+
+		if (!fs.existsSync(this.dbPath)) return;
+
+		const info = fs.readFileSync(this.dbPath, {encoding: 'utf-8'});
+		
+		const data = JSON.parse(info);
+
+		this.historial = data.historial
+	}
+
+	clearHistory() {
+		this.historial = [];
+
+		console.log('Historial eliminado'.red);
+
+		this.saveDB();
 	}
 }
 

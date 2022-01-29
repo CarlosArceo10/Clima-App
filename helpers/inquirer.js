@@ -17,6 +17,10 @@ const preguntas = [
                 name: `${ '2.'.yellow } Historial`
             },
             {
+                value: 3,
+                name: `${ '3.'.blue } Clear history`
+            },
+            {
                 value: 0,
                 name: `${ '0.'.green } Salir \n`
             }
